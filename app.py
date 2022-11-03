@@ -6,11 +6,13 @@ from flask import Flask, request
 from flask_cors import CORS
 import logging
 from utilities.object_storage_connector import ObjectStorage
+from utilities.kafka_connector import Kafka
 from minio import Minio
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"*": {"origins": "*"}})
 
+kafka = Kafka()
 mc = ObjectStorage()
 
 if not mc.is_connected():
@@ -24,7 +26,8 @@ def index():
 def upload_file():
     f = request.files["user_file"]
     size = int(request.form["file_size"])
-    mc.upload_new_file(f, f.filename, size)
+    bucket, object_name = mc.upload_new_file(f, f.filename, size)
+    kafka.new_file_alert(bucket, object_name)
     return "", 200
 
 

@@ -11,12 +11,13 @@ class ObjectStorage:
             secure=False)
 
     def upload_new_file(self, file, filename, file_size=None):
+        bucket = os.environ.get("STAGING_BUCKET")
         if file_size is not None:
-            result = self.mc.put_object("staging", filename, file, file_size)
+            result = self.mc.put_object(bucket, filename, file, file_size)
         else:
             # object size is unknown
-            result = self.mc.put_object("staging", filename, file, -1, part_size=10*1024*1024)
-        return result
+            result = self.mc.put_object(bucket, filename, file, -1, part_size=10*1024*1024)
+        return bucket, result.object_name
     
     def is_connected(self):
         try:
