@@ -28,7 +28,13 @@ def upload_file():
     size = int(request.form["file_size"])
     bucket, object_name = mc.upload_new_file(f, f.filename, size)
     kafka.new_file_alert(bucket, object_name)
-    return "", 200
+    return {"bucket": bucket, "name": object_name}, 201
+
+@app.route("/check_stage", methods=["POST"])
+def check_metadata_extraction_stage():
+    data = request.json
+    res = mc.check_metadata_extraction_stage(data["bucket"], data["object_name"])
+    return res
 
 
 if __name__ == "__main__":

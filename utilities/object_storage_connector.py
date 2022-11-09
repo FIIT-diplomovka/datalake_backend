@@ -13,11 +13,16 @@ class ObjectStorage:
     def upload_new_file(self, file, filename, file_size=None):
         bucket = os.environ.get("STAGING_BUCKET")
         if file_size is not None:
-            result = self.mc.put_object(bucket, filename, file, file_size)
+            result = self.mc.put_object(bucket, filename, file, file_size, metadata={"stage": "new"})
         else:
             # object size is unknown
-            result = self.mc.put_object(bucket, filename, file, -1, part_size=10*1024*1024)
+            result = self.mc.put_object(bucket, filename, file, -1, part_size=10*1024*1024, metadata={"stage": "new"})
         return bucket, result.object_name
+
+    def check_metadata_extraction_stage(self, bucket, object_name):
+        result = self.mc.stat_object(bucket, object_name)
+        logging.info(result.metadata)
+        return result
     
     def is_connected(self):
         try:
