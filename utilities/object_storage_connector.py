@@ -21,7 +21,7 @@ class ObjectStorage:
 
     def check_metadata_extraction_stage(self, bucket, object_name):
         result = self.mc.stat_object(bucket, object_name)
-        logging.info(result.metadata)
+        result = {k.lower(): v for k, v in result.metadata.items()}
         return result
     
     def is_connected(self):
