@@ -8,6 +8,7 @@ import logging
 from utilities.object_storage_connector import ObjectStorage
 from utilities.kafka_connector import Kafka
 from minio import Minio
+import base64
 
 METADATA_PREFIX = "x-amz-meta-"
 app = Flask(__name__)
@@ -29,7 +30,11 @@ def upload_file():
     size = int(request.form["file_size"])
     bucket, object_name = mc.upload_new_file(f, f.filename, size)
     kafka.new_file_alert(bucket, object_name)
-    return {"bucket": bucket, "name": object_name}, 201
+    # encode bucket + object name as b64 string
+    b64_address = (bucket + "/" + object_name).encode('ascii')
+    b64_address = base64.b64encode(b64_address)
+    b64_address = b64_address.decode('ascii')
+    return {"bucket": bucket, "name": object_name, "b64": b64_address}, 201
 
 @app.route("/check_stage", methods=["POST"])
 def check_metadata_extraction_stage():
