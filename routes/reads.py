@@ -1,21 +1,18 @@
 from flask import Blueprint, request
-import base64
 from utilities.object_storage_connector import ObjectStorage
-from utilities.kafka_connector import Kafka
-from minio import Minio
+
 
 read = Blueprint("read_routes", __name__, url_prefix="/read")
 
 METADATA_PREFIX = "x-amz-meta-"
 
-kafka = Kafka()
-mc = ObjectStorage()
 
-if not mc.is_connected():
+if not ObjectStorage().is_connected():
     exit(1)
 
 @read.route("/check_stage", methods=["POST"])
 def check_metadata_extraction_stage():
+    mc = ObjectStorage()
     data = request.json
     extracted = mc.check_metadata_extraction_stage(data["bucket"], data["name"])
     if (METADATA_PREFIX + "stage") in extracted and extracted[METADATA_PREFIX + "stage"] == "done":
