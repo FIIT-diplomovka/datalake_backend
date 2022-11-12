@@ -24,6 +24,12 @@ if not mc.is_connected():
 def index():
     return "<h1>datalake<h1>"
 
+@app.route("/submit_new", methods=["POST"])
+def submit_new():
+    data = request.json
+    print(data)
+    return "Created", 201
+
 @app.route("/upload", methods=["POST"])
 def upload_file():
     f = request.files["user_file"]
