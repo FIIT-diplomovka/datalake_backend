@@ -1,5 +1,6 @@
 import os
 import logging
+from minio.commonconfig import REPLACE, CopySource
 from minio import Minio
 
 class ObjectStorage:
@@ -33,3 +34,11 @@ class ObjectStorage:
             logging.critical("Cannot connect to object storage")
             logging.critical(e, exc_info=True)
             return False
+    
+    def production_insert(self, bucket, object, metadata):
+        prod_bucket = os.environ.get("PRODUCTION_BUCKET")
+        new_obj_name = object + "@" + metadata["dcm_identifier"]
+        result = self.mc.copy_object(prod_bucket, new_obj_name, CopySource(bucket, object), metadata_directive=REPLACE, metadata=metadata)
+        # remove object inside staging
+        self.mc.remove_object(bucket, object)
+        return prod_bucket, result.object_name

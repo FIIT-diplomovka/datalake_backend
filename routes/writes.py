@@ -2,7 +2,7 @@ from flask import Blueprint, request
 import base64
 from utilities.object_storage_connector import ObjectStorage
 from utilities.kafka_connector import Kafka
-from minio import Minio
+from utilities.postgres_connector import Postgres
 
 write = Blueprint("write_routes", __name__, url_prefix="/write")
 
@@ -30,8 +30,9 @@ def upload_file():
 
 @write.route("/submit_new", methods=["POST"])
 def submit_new():
-    kafka = Kafka()
     mc = ObjectStorage()
+    pg = Postgres()
     data = request.json
-    print(data)
+    new_bucket, new_object = mc.production_insert(data["object"]["bucket"], data["object"]["name"], data["metadata"])
+    pg.insert_new_object(new_bucket, new_object, data["metadata"])
     return "Created", 201
