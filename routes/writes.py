@@ -33,6 +33,6 @@ def submit_new():
     mc = ObjectStorage()
     pg = Postgres()
     data = request.json
-    new_bucket, new_object = mc.production_insert(data["object"]["bucket"], data["object"]["name"], data["metadata"])
-    pg.insert_new_object(new_bucket, new_object, data["metadata"])
+    new_bucket, new_object = mc.production_insert(data["object"]["bucket"], data["object"]["name"], data["dcm"])
+    pg.insert_new_object(new_bucket, new_object, data["dcm"], data["tags"])
     return "Created", 201

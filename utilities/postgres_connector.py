@@ -30,17 +30,22 @@ class Postgres():
                 exit(1)
     
     # save triples of metadata for object + save storage details for object
-    def insert_new_object(self, bucket, object, metadata):
+    def insert_new_object(self, bucket, object, dcm, tags):
         cur = Postgres.conn.cursor()
         try:
-            cur.execute(Postgres.INSERT_STORAGE, {"hash": metadata["dcm_identifier"], "bucket": bucket, "object": object})
+            cur.execute(Postgres.INSERT_STORAGE, {"hash": dcm["dcm_identifier"], "bucket": bucket, "object": object})
         except psycopg2.errors.UniqueViolation:
             print("Already inserted..")
             return
         # insert list of tuples as this is fastest way for postgres
         inserts = []
-        for key in metadata:
-            row = (metadata["dcm_identifier"], key, metadata[key])
+        # dcm
+        for key in dcm:
+            row = (dcm["dcm_identifier"], key, dcm[key])
+            inserts.append(row)
+        # tags
+        for tag in tags:
+            row = (dcm["dcm_identifier"], "tag", tag)
             inserts.append(row)
         # mogrify sanitizes input, so this is SQL injection safe
         args_str = ','.join(cur.mogrify("(%s, %s, %s)", x).decode("utf-8") for x in inserts)
