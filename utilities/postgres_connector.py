@@ -14,6 +14,10 @@ class Postgres():
         INSERT INTO storage (hash, bucket, object) VALUES (%(hash)s, %(bucket)s, %(object)s)
     """
 
+    BASIC_SELECT = """
+    SELECT subject, predicate, object FROM triples WHERE predicate = 'dcm_title' OR predicate = 'dcm_description' OR predicate = 'tag'
+    """
+
 
     def __init__(self) -> None:
         if Postgres.conn is None:
@@ -52,3 +56,19 @@ class Postgres():
         cur.execute(Postgres.INSERT_TRIPLE + args_str)
         Postgres.conn.commit()
         cur.close()
+
+    def get_objects(self):
+        cur = Postgres.conn.cursor()
+        cur.execute(Postgres.BASIC_SELECT)
+        records = cur.fetchall()
+        objects = {}
+        for r in records:
+            if r[0] not in objects:
+                # tags need to be predefined because it's a list, other attributes are strings so can be created dynamically
+                objects[r[0]] = {"tags": []}
+            if r[1] == "tag":
+                objects[r[0]]["tags"].append(r[2])
+            else:
+                objects[r[0]][r[1]] = r[2]
+        cur.close()
+        return objects

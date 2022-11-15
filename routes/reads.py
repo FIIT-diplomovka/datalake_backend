@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from utilities.object_storage_connector import ObjectStorage
+from utilities.postgres_connector import Postgres
 
 
 read = Blueprint("read_routes", __name__, url_prefix="/read")
@@ -27,3 +28,9 @@ def check_metadata_extraction_stage():
         return res, 200
     else:
         return "Not ready yet..", 202
+
+
+@read.route("/get_objects", methods=["GET"])
+def get_objects():
+    pg = Postgres()
+    return pg.get_objects(), 200
