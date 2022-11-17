@@ -15,7 +15,11 @@ class Postgres():
     """
 
     BASIC_SELECT = """
-    SELECT subject, predicate, object FROM triples WHERE predicate = 'dcm_title' OR predicate = 'dcm_description' OR predicate = 'tag'
+        SELECT subject, predicate, object FROM triples WHERE predicate = 'dcm_title' OR predicate = 'dcm_description' OR predicate = 'tag'
+    """
+
+    DETAILS = """
+        SELECT predicate, object FROM triples WHERE subject = %(id)s
     """
 
 
@@ -72,3 +76,19 @@ class Postgres():
                 objects[r[0]][r[1]] = r[2]
         cur.close()
         return objects
+
+    def get_details(self, id):
+        cur = Postgres.conn.cursor()
+        cur.execute(Postgres.DETAILS, {"id": id})
+        records = cur.fetchall()
+        result = {"tags": []}
+        print(cur.query)
+        for r in records:
+            if r[0] == "tag":
+                result["tags"].append(r[1])
+            else:
+                result[r[0]] = r[1]
+        if len(result) == 0:
+            return None
+        return result
+            

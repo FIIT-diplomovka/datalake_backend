@@ -34,3 +34,11 @@ def check_metadata_extraction_stage():
 def get_objects():
     pg = Postgres()
     return pg.get_objects(), 200
+
+@read.route("/details/<id>", methods=["GET"])
+def get_details(id):
+    pg = Postgres()
+    result = pg.get_details(id)
+    if result is None:
+        return "Object does not exist", 404
+    return result, 200
