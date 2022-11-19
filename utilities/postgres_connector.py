@@ -15,7 +15,16 @@ class Postgres():
     """
 
     BASIC_SELECT = """
-        SELECT subject, predicate, object FROM triples WHERE predicate = 'dcm_title' OR predicate = 'dcm_description' OR predicate = 'tag'
+        SELECT subject, predicate, object FROM triples WHERE (predicate = 'dcm_title' OR predicate = 'dcm_description' OR predicate = 'tag')
+    """
+    # this is written in such a way so its easy to append another filter parameters to it
+    FILTER_TAGS_SELECT = """
+        SELECT DISTINCT subject FROM triples WHERE (predicate = 'tag' AND (object IN %(tags)s OR %(tags)s IS NULL))
+    """
+
+    FILTER_TAGS_SELECT2 = """
+        SELECT subject FROM (SELECT subject, COUNT(*) as count FROM triples WHERE $$CLAUSES$$ GROUP BY subject) as sc
+        WHERE sc.count = %(count)s
     """
 
     DETAILS = """
@@ -61,9 +70,38 @@ class Postgres():
         Postgres.conn.commit()
         cur.close()
 
-    def get_objects(self):
+    def __filter_by_tags(self, tags: list) -> tuple:
         cur = Postgres.conn.cursor()
-        cur.execute(Postgres.BASIC_SELECT)
+        query = Postgres.FILTER_TAGS_SELECT2
+        empty_clause = "(predicate = 'tag' AND object = %s)"
+        full_clause = ""
+        for index, tag in enumerate(tags):
+            if index != 0:
+                full_clause += " OR "
+            full_clause += cur.mogrify(empty_clause,(tag, )).decode("utf-8")
+        query = query.replace("$$CLAUSES$$", full_clause)
+        cur.execute(query, {"count": len(tags)})
+        ids = []
+        results = cur.fetchall()
+        for r in results:
+            ids.append(r[0])
+        return tuple(ids)
+
+    def get_objects(self, tags=None, properties=None):
+        cur = Postgres.conn.cursor()
+        query_to_execute = Postgres.BASIC_SELECT        # here check if all possible filter variables are None or not. If not, apply filter
+        tag_filter_ids = tuple()
+        property_filter_ids = tuple()
+        if tags is not None:
+            tag_filter_ids = self.__filter_by_tags(tags.split(","))
+            # if tag filter is returns nothing, filter is too strinct, return no objects. Same thing happens near property filer
+            if len(tag_filter_ids) == 0:
+                return {}
+            query_to_execute += " AND subject IN %(tag_filter_ids)s "
+        if properties is not None:
+            # TODO: this. replicate tag if condition
+            pass
+        cur.execute(query_to_execute, {'tag_filter_ids': tag_filter_ids, "property_filter_ids": property_filter_ids})
         records = cur.fetchall()
         objects = {}
         for r in records:
@@ -92,3 +130,11 @@ class Postgres():
             return None
         return result
             
+    def get_tags(self):
+        cur = Postgres.conn.cursor()
+        cur.execute("SELECT DISTINCT object from triples WHERE predicate = 'tag'")
+        records = cur.fetchall()
+        tags = []
+        for tag in records:
+            tags.append(tag[0])
+        return tags

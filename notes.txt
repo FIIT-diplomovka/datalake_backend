@@ -1,0 +1,19 @@
+pre filtorvanie podla properties:
+
+SELECT subject, COUNT(*) as count FROM triples WHERE (predicate = 'dcm_contributor' AND object = 'Dominik Horvath')
+OR (predicate = 'dcm_language' AND object = 'en') GROUP BY subject
+
+Potrebujeme zratat kolko WHERE klauzul mame. V hornom pripade to su 2. tato query vrati key value pairs - objectID -> pocet vlastnosti, ktore splna na filter. 
+Ak vieme, ze where obsahuje N klauzul, vo vysledku bude pre nas relevanntny len ten riadok, ktory v pocte vlastnosti splnajucich filter obsahuje N.  Cize toto je kompletna query:
+
+SELECT subject FROM (SELECT subject, COUNT(*) as count FROM triples WHERE (predicate = 'dcm_contributor' AND object = 'Dominik Horvath')
+OR (predicate = 'dcm_language' AND object = 'en') GROUP BY subject) as sc
+WHERE sc.count = 2
+
+kde sc.count bude parameter setnuty na front ende podla poctu where klauzul.
+
+taky isty princip sa da spravit na kontrolu tagov:
+
+SELECT subject FROM (SELECT subject, COUNT(*) as count FROM triples WHERE (predicate = 'tag' AND object = 'test')
+OR (predicate = 'tag' AND object = 'machine learning') GROUP BY subject) as sc
+WHERE sc.count = 2

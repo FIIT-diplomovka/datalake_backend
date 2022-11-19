@@ -32,8 +32,15 @@ def check_metadata_extraction_stage():
 
 @read.route("/get_objects", methods=["GET"])
 def get_objects():
+    args = request.args
+    tags = args.get("tags", default=None, type=str)
     pg = Postgres()
-    return pg.get_objects(), 200
+    objects = pg.get_objects(tags=tags)
+    results = {
+        "total": len(objects),
+        "objects": objects
+    }
+    return results, 200
 
 @read.route("/details/<id>", methods=["GET"])
 def get_details(id):
@@ -41,4 +48,12 @@ def get_details(id):
     result = pg.get_details(id)
     if result is None:
         return "Object does not exist", 404
+    return result, 200
+
+@read.route("/get_tags", methods=["GET"])
+def get_tags():
+    pg = Postgres()
+    result = {
+        "tags": pg.get_tags()
+    }
     return result, 200
