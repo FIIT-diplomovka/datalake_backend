@@ -51,4 +51,4 @@ jobs:
         passphrase: ${{ secrets.SSH_KEY_PASS }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          whoami
+          touch ~/test.txt
