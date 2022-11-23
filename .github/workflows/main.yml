@@ -51,4 +51,5 @@ jobs:
         passphrase: ${{ secrets.SSH_KEY_PASS }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          touch ~/test.txt
+          cd ~/datalake_infrastructure/production_infrastructure
+          docker-compose pull backend && docker-compose up -d --no-deps --build backend && docker system prune -f
