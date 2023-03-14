@@ -1,4 +1,5 @@
 import os
+import json
 import psycopg2
 
 
@@ -29,6 +30,18 @@ class Postgres():
 
     DETAILS = """
         SELECT predicate, object FROM triples WHERE subject = %(id)s
+    """
+
+    STAGING_NEW = """
+        INSERT INTO staging (bucket, object) VALUES (%(bucket)s, %(object)s)
+    """
+
+    STAGING_CHECK = """
+        SELECT metadata, malware FROM staging WHERE bucket = %(bucket)s AND object = %(object)s
+    """
+
+    STAGING_DELETE = """
+        DELETE FROM staging WHERE bucket = %(bucket)s AND object = %(object)s
     """
 
 
@@ -69,6 +82,12 @@ class Postgres():
         cur.execute(Postgres.INSERT_TRIPLE + args_str)
         Postgres.conn.commit()
         cur.close()
+    
+    def create_new_staging(self, bucket, object):
+        cur = Postgres.conn.cursor()
+        cur.execute(Postgres.STAGING_NEW, {"bucket": bucket, "object": object})
+        Postgres.conn.commit()
+
 
     def __filter_by_tags(self, tags: list) -> tuple:
         cur = Postgres.conn.cursor()
@@ -129,6 +148,26 @@ class Postgres():
         if len(result) == 0:
             return None
         return result
+    
+    def check_staging(self, bucket, object):
+        cur = Postgres.conn.cursor()
+        cur.execute(Postgres.STAGING_CHECK, {"bucket": bucket, "object": object})
+        record = cur.fetchone()
+        # not ready yet
+        if record == None or (record[0] is None and record[1] is None):
+            return None
+        # record available
+        # convert all keys to lowercase
+        object_metadata = {k.lower(): v for k, v in record[0].items()} if record[0] is not None else None
+        object_is_malware = record[1]
+        return {"metadata": object_metadata, "malware": object_is_malware}
+
+    def remove_staging_record(self, bucket, object):
+        cur = Postgres.conn.cursor()
+        cur.execute(Postgres.STAGING_DELETE, {"bucket": bucket, "object": object})
+        Postgres.conn.commit()
+        
+
             
     def get_tags(self):
         cur = Postgres.conn.cursor()

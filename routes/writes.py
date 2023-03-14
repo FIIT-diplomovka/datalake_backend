@@ -14,14 +14,30 @@ if not ObjectStorage().is_connected():
     exit(1)
 
 
+# @write.route("/upload", methods=["POST"])
+# def upload_file():
+#     kafka = Kafka()
+#     mc = ObjectStorage()
+#     f = request.files["user_file"]
+#     size = int(request.form["file_size"])
+#     bucket, object_name = mc.upload_new_file(f, f.filename, size)
+#     kafka.new_file_alert(bucket, object_name)
+#     # encode bucket + object name as b64 string. This way, front end can put it inside the URL parameters
+#     b64_address = (bucket + "/" + object_name).encode('ascii')
+#     b64_address = base64.b64encode(b64_address)
+#     b64_address = b64_address.decode('ascii')
+#     return {"bucket": bucket, "name": object_name, "b64": b64_address}, 201
+
 @write.route("/upload", methods=["POST"])
 def upload_file():
     kafka = Kafka()
     mc = ObjectStorage()
+    pg = Postgres()
     f = request.files["user_file"]
     size = int(request.form["file_size"])
     bucket, object_name = mc.upload_new_file(f, f.filename, size)
     kafka.new_file_alert(bucket, object_name)
+    pg.create_new_staging(bucket, object_name)
     # encode bucket + object name as b64 string. This way, front end can put it inside the URL parameters
     b64_address = (bucket + "/" + object_name).encode('ascii')
     b64_address = base64.b64encode(b64_address)
@@ -35,4 +51,5 @@ def submit_new():
     data = request.json
     new_bucket, new_object = mc.production_insert(data["object"]["bucket"], data["object"]["name"], data["dcm"])
     pg.insert_new_object(new_bucket, new_object, data["dcm"], data["tags"])
+    pg.remove_staging_record(data["object"]["bucket"], data["object"]["name"])
     return "Created", 201
