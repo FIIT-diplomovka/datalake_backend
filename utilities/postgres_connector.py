@@ -60,7 +60,7 @@ class Postgres():
                 exit(1)
     
     # save triples of metadata for object + save storage details for object
-    def insert_new_object(self, bucket, object, dcm, tags):
+    def insert_new_object(self, bucket, object, dcm, tags, malware):
         cur = Postgres.conn.cursor()
         try:
             cur.execute(Postgres.INSERT_STORAGE, {"hash": dcm["dcm_identifier"], "bucket": bucket, "object": object})
@@ -77,6 +77,9 @@ class Postgres():
         for tag in tags:
             row = (dcm["dcm_identifier"], "tag", tag)
             inserts.append(row)
+        # malware
+        row = (dcm["dcm_identifier"], "malware", malware)
+        inserts.append(row)
         # mogrify sanitizes input, so this is SQL injection safe
         args_str = ','.join(cur.mogrify("(%s, %s, %s)", x).decode("utf-8") for x in inserts)
         cur.execute(Postgres.INSERT_TRIPLE + args_str)

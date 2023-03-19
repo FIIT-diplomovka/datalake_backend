@@ -7,10 +7,11 @@ class Kafka:
         self.producer = KafkaProducer(bootstrap_servers=os.environ.get("KAFKA_URL"))
     
 
-    def new_file_alert(self, bucket, path):
+    def start_metadata_analysis(self, bucket, path, method="droid"):
         msg_body = {
             "bucket": bucket,
-            "path": path
+            "path": path,
+            "method": method
         }
         msg_body = json.dumps(msg_body)
         self.producer.send("NEW_ENTRY", str.encode(msg_body))

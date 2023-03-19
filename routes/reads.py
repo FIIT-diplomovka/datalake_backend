@@ -40,6 +40,15 @@ def check_metadata_extraction_stage():
         check["metadata"]["dcm_date"] = check["metadata"]["dcm_date"].split("T")[0]
     return check, 200
 
+@read.route("/check_malware", methods=["POST"])
+def check_malware_check_phase():
+    data = request.json
+    pg = Postgres()
+    check = pg.check_staging(data["bucket"], data["name"])
+    if check is None:
+        return "Not ready yet...", 202
+    else:
+        return {"malware": check["malware"]}
          
 
 
