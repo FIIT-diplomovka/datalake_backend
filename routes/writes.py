@@ -51,7 +51,10 @@ def restart_analysis():
     kafka = Kafka()
     pg.remove_staging_record(data["bucket"], data["name"])
     pg.create_new_staging(data["bucket"], data["name"])
-    kafka.start_metadata_analysis(data["bucket"], data["name"], data["method"])
+    use_gpt3 = False
+    if "use_gpt3" in data and data["use_gpt3"] == 1:
+        use_gpt3 = True
+    kafka.start_metadata_analysis(data["bucket"], data["name"], data["method"], use_gpt3)
     return "OK", 200
 
 
